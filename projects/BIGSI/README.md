@@ -256,21 +256,6 @@ done
 
 ### Transform graphs
 ```bash
-for i in {1..33}; do
-    N=$((750 * i));
-    bsub -J "to_small_graph_${N}" \
-         -oo ~/metagenome/data/BIGSI/subsets/lsf_logs/to_small_graph_${N}.lsf \
-         -W 1:00 \
-         -n 1 -R "rusage[mem=50000] span[hosts=1]" \
-        "/usr/bin/time -v ~/projects/projects2014-metagenome/metagraph/build_test/metagraph_DNA transform -v \
-                --state small \
-                --index-ranges 10 \
-                -o ~/metagenome/data/BIGSI/subsets/graph_subset_${N}.small.indexed.dbg \
-                ~/metagenome/data/BIGSI/subsets/graph_subset_${N}.small.dbg \
-                2>&1"; \
-done
-
-
 for i in {33..1}; do
     N=$((750 * i));
     bsub -J "to_primary_contigs_${N}" \
@@ -298,6 +283,20 @@ for i in {1..33}; do
                 --index-ranges 12 \
                 -o ~/metagenome/data/BIGSI/subsets/graph_subset_${N}_primary \
                 ~/metagenome/data/BIGSI/subsets/contigs/graph_subset_${N}.primary_contigs.fasta.gz \
+                2>&1"; \
+done
+
+
+for i in {1..33}; do
+    N=$((750 * i));
+    bsub -J "to_small_graph_${N}" \
+         -oo ~/metagenome/data/BIGSI/subsets/lsf_logs/to_small_graph_${N}.lsf \
+         -W 1:00 \
+         -n 1 -R "rusage[mem=50000] span[hosts=1]" \
+        "/usr/bin/time -v ~/projects/projects2014-metagenome/metagraph/build_release/metagraph_DNA transform -v \
+                --state small \
+                -o ~/metagenome/data/BIGSI/subsets/graph_subset_${N}_primary.small.dbg \
+                ~/metagenome/data/BIGSI/subsets/graph_subset_${N}_primary.dbg \
                 2>&1"; \
 done
 
@@ -515,7 +514,7 @@ done
 
 ## Query graph
 ```bash
-METAGRAPH=~/projects/projects2014-metagenome/metagraph/build_test/metagraph_DNA
+METAGRAPH=~/projects/projects2014-metagenome/metagraph/build_test/metagraph
 
 # file to query
 for QUERY in ~/metagenome/data/BIGSI/subsets/query/samples/haib18CEM5453_HMCMJCCXY_SL336225.fasta \
@@ -545,7 +544,7 @@ for QUERY in ~/metagenome/data/BIGSI/subsets/query/samples/haib18CEM5453_HMCMJCC
                 cp ~/metagenome/data/BIGSI/subsets/annotation/annotation_subset_${num_columns}_primary.rb_brwt.annodbg \
                     \${TMPDIR}/graph.rb_brwt.annodbg; \
                 /usr/bin/time -v $run > /dev/null 2> /dev/null; \
-                for i in {1..10}; do \
+                for i in {1..3}; do \
                     /usr/bin/time -v $run > \${TMPDIR}/out 2>> \${TMPDIR}/err;
                 done; \
                 mv \${TMPDIR}/out ${OUTDIR}/${num_columns}.out; \
