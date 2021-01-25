@@ -33,6 +33,14 @@ jobs:
             cc: gcc-10
             build_static: ON
             alphabet: DNA
+
+          - build_type: Release
+            compiler: g++-10
+            cxx: g++-10
+            cc: gcc-10
+            build_static: ON
+            alphabet: Protein
+
         exclude:
           - alphabet: Protein
             compiler: g++-8
@@ -87,31 +95,31 @@ jobs:
     - name: build metagraph
       run: cd metagraph/build && make -j 2 metagraph
 
-    - name: build unit tests
-      if: ${{ matrix.build_static == 'OFF' }}
-      run: cd metagraph/build && make -j 2 unit_tests
+    # - name: build unit tests
+    #   if: ${{ matrix.build_static == 'OFF' }}
+    #   run: cd metagraph/build && make -j 2 unit_tests
 
-    - name: build other
-      run: cd metagraph/build && make -j 2
+    # - name: build other
+    #   run: cd metagraph/build && make -j 2
 
-    - name: run unit tests
-      if: ${{ matrix.build_static == 'OFF' }}
-      run: |
-        export LD_LIBRARY_PATH="/usr/local/lib/:$LD_LIBRARY_PATH"
-        cd metagraph/build && ./unit_tests
+    # - name: run unit tests
+    #   if: ${{ matrix.build_static == 'OFF' }}
+    #   run: |
+    #     export LD_LIBRARY_PATH="/usr/local/lib/:$LD_LIBRARY_PATH"
+    #     cd metagraph/build && ./unit_tests
 
-    - name: run integration tests
-      run: |
-        export LD_LIBRARY_PATH="/usr/local/lib/:$LD_LIBRARY_PATH"
-        cd metagraph/build && make check
+    # - name: run integration tests
+    #   run: |
+    #     export LD_LIBRARY_PATH="/usr/local/lib/:$LD_LIBRARY_PATH"
+    #     cd metagraph/build && make check
 
     # for potential release
     - name: upload static binary
       if: ${{ matrix.build_static == 'ON' }}
       uses: actions/upload-artifact@v2
       with:
-        name: metagraph_dna_static_binary
-        path: metagraph/build/metagraph_DNA
+        name: metagraph_${{ matrix.alphabet }}_static_binary
+        path: metagraph/build/metagraph_${{ matrix.alphabet }}
 
 
   MacOS:
@@ -151,29 +159,28 @@ jobs:
     - name: build metagraph
       run: cd metagraph/build && make -j 2 metagraph
 
-    - name: build unit tests
-      run: cd metagraph/build && make -j 2 unit_tests
+    #- name: build unit tests
+    #  run: cd metagraph/build && make -j 2 unit_tests
 
     - name: build other
       run: cd metagraph/build && make -j 2
 
-    - name: run unit tests
-      run: cd metagraph/build && ./unit_tests
+    #- name: run unit tests
+    #  run: cd metagraph/build && ./unit_tests
 
-    - name: run integration tests
-      run: cd metagraph/build && make check
+    #- name: run integration tests
+    #  run: cd metagraph/build && make check
 
   Release:
     name: Create Release
-    if: contains(github.ref, "tags/v")
+    if: contains(github.ref, 'tags/v')
     runs-on: ubuntu-latest
     needs: Linux
     steps:
       - name: fetch static binary
         uses: actions/download-artifact@v2
         with:
-          name: metagraph_dna_static_binary
-          path: metagraph_DNA
+          path: artifacts
       - name: create release
         id: create_release
         uses: actions/create-release@v1
@@ -185,12 +192,10 @@ jobs:
           body: some test release with static binaries for linux
           draft: true
           prerelease: true
-      - name: upload static binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: upload static binaries
+        uses: svenstaro/upload-release-action@v2
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./metagraph_DNA
-          asset_name: metagraph_DNA
-          asset_content_type: application/x-binary
+          file: 'artifacts/*/metagraph_*'
+          file_glob: true
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
